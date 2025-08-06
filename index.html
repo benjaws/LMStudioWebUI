@@ -55,6 +55,17 @@
       color: var(--text-color);
       font-size: 0.95rem;
     }
+    #auth-token {
+      flex-grow: 1;
+      padding: 0.5rem 0.75rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-size: 0.95rem;
+    }
     /* Model selection dropdown */
     #model-select {
       padding: 0.5rem;
@@ -372,14 +383,15 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
-  <div id="app">
-    <div id="server-url-container">
-      <input type="text" id="server-url" placeholder="Enter LM Studio server address" />
-      <select id="model-select" disabled>
-        <option value="">Select a model</option>
-      </select>
-      <button id="connect-button"><i class="fas fa-plug"></i> Connect</button>
-    </div>
+    <div id="app">
+      <div id="server-url-container">
+        <input type="text" id="server-url" placeholder="Enter LM Studio server address" />
+        <input type="text" id="auth-token" placeholder="API Token" />
+        <select id="model-select" disabled>
+          <option value="">Select a model</option>
+        </select>
+        <button id="connect-button"><i class="fas fa-plug"></i> Connect</button>
+      </div>
     <div id="connection-status">Disconnected</div>
     <div id="main-content">
       <!-- Chat Sidebar -->
@@ -409,25 +421,30 @@
   
   <script>
     // Global variables
-    const chatContainer = document.getElementById('chat-container');
-    const userInput = document.getElementById('user-input');
-    const serverUrlInput = document.getElementById('server-url');
-    const connectButton = document.getElementById('connect-button');
-    const connectionStatus = document.getElementById('connection-status');
-    const sendButton = document.getElementById('send-button');
-    const newChatButton = document.getElementById('new-chat-button');
-    const toggleSidebarButton = document.getElementById('toggle-sidebar');
-    const chatSidebar = document.getElementById('chat-sidebar');
-    const chatList = document.getElementById('chat-list');
-    const contextMenu = document.getElementById('context-menu');
-    const modelSelect = document.getElementById('model-select');
-    const uploadButton = document.getElementById('upload-button');
-    const imageUpload = document.getElementById('image-upload');
-    const imagePreview = document.getElementById('image-preview');
-    
-    let isConnected = false;
-    let currentModel = '';
-    let pendingImage = null;
+      const chatContainer = document.getElementById('chat-container');
+      const userInput = document.getElementById('user-input');
+      const serverUrlInput = document.getElementById('server-url');
+      const authTokenInput = document.getElementById('auth-token');
+      const connectButton = document.getElementById('connect-button');
+      const connectionStatus = document.getElementById('connection-status');
+      const sendButton = document.getElementById('send-button');
+      const newChatButton = document.getElementById('new-chat-button');
+      const toggleSidebarButton = document.getElementById('toggle-sidebar');
+      const chatSidebar = document.getElementById('chat-sidebar');
+      const chatList = document.getElementById('chat-list');
+      const contextMenu = document.getElementById('context-menu');
+      const modelSelect = document.getElementById('model-select');
+      const uploadButton = document.getElementById('upload-button');
+      const imageUpload = document.getElementById('image-upload');
+      const imagePreview = document.getElementById('image-preview');
+
+      let isConnected = false;
+      let currentModel = '';
+      let pendingImage = null;
+      let authToken = window.CONFIG?.AUTH_TOKEN || '';
+      if (authToken && authTokenInput) {
+        authTokenInput.value = authToken;
+      }
     
     // Chat management: each chat has an id, name, and messages array.
     let chats = [];
@@ -582,19 +599,21 @@
     }
     
     // Ejects the currently loaded model.
-    async function ejectCurrentModel(oldModel) {
-      const serverUrl = serverUrlInput.value.trim();
-      try {
-        await fetch(`${serverUrl}/v1/model/eject`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: oldModel })
-        });
-        console.log(`Model ${oldModel} ejected.`);
-      } catch (error) {
-        console.error("Error ejecting model:", error);
+      async function ejectCurrentModel(oldModel) {
+        const serverUrl = serverUrlInput.value.trim();
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          await fetch(`${serverUrl}/v1/model/eject`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ model: oldModel })
+          });
+          console.log(`Model ${oldModel} ejected.`);
+        } catch (error) {
+          console.error("Error ejecting model:", error);
+        }
       }
-    }
     
     // Build conversation history without merging messages.
     // The history starts with the system prompt, then includes each stored message in order.
@@ -630,19 +649,24 @@
       modelSelect.disabled = false;
     });
     
-    // Connect to server and populate model dropdown.
-    async function connectToServer() {
-      const serverUrl = serverUrlInput.value.trim();
-      if (!serverUrl) {
-        updateConnectionStatus('Please enter a valid server address', false);
-        return;
-      }
-      try {
-        updateConnectionStatus('Connecting...', false);
-        const response = await fetch(`${serverUrl}/v1/models`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+      // Connect to server and populate model dropdown.
+      async function connectToServer() {
+        const serverUrl = serverUrlInput.value.trim();
+        if (authTokenInput) {
+          authToken = authTokenInput.value.trim();
+        }
+        if (!serverUrl) {
+          updateConnectionStatus('Please enter a valid server address', false);
+          return;
+        }
+        try {
+          updateConnectionStatus('Connecting...', false);
+          const headers = { 'Content-Type': 'application/json' };
+          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          const response = await fetch(`${serverUrl}/v1/models`, {
+            method: 'GET',
+            headers
+          });
         if (!response.ok) throw new Error('Server response was not ok');
         const data = await response.json();
         if (data && data.data && data.data.length > 0) {
@@ -677,6 +701,7 @@
       connectionStatus.style.color = connected ? 'var(--accent-color)' : '#f44336';
       connectButton.textContent = connected ? 'Disconnect' : 'Connect';
       serverUrlInput.disabled = connected;
+      if (authTokenInput) authTokenInput.disabled = connected;
       userInput.disabled = !connected;
       sendButton.disabled = !connected;
     }
@@ -729,18 +754,20 @@
       const startTime = performance.now();
       let accumulatedText = '';
     
-      try {
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: currentModel,
-            messages: conversationHistory,
-            temperature: 0.7,
-            max_tokens: -1,
-            stream: true
-          })
-        });
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model: currentModel,
+              messages: conversationHistory,
+              temperature: 0.7,
+              max_tokens: -1,
+              stream: true
+            })
+          });
         if (!response.ok) throw new Error('Server response was not ok');
     
         const reader = response.body.getReader();
@@ -823,19 +850,21 @@
       imageUpload.value = "";
     });
     
-    connectButton.addEventListener('click', () => {
-      if (isConnected) {
-        isConnected = false;
-        updateConnectionStatus('Disconnected', false);
-        userInput.disabled = true;
-        sendButton.disabled = true;
-        addMessage('Disconnected from LM Studio server.', false);
-        currentModel = '';
-        modelSelect.disabled = true;
-      } else {
-        connectToServer();
-      }
-    });
+      connectButton.addEventListener('click', () => {
+        if (isConnected) {
+          isConnected = false;
+          updateConnectionStatus('Disconnected', false);
+          userInput.disabled = true;
+          sendButton.disabled = true;
+          addMessage('Disconnected from LM Studio server.', false);
+          currentModel = '';
+          modelSelect.disabled = true;
+          authToken = '';
+          if (authTokenInput) authTokenInput.value = '';
+        } else {
+          connectToServer();
+        }
+      });
     
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     sendButton.addEventListener('click', sendMessage);
