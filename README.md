@@ -100,3 +100,14 @@ This is a personal project. While the code is public for anyone to use and learn
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=YorkieDev/LMStudioWebUI&type=Date)](https://star-history.com/#YorkieDev/LMStudioWebUI&Date)
+
+## Environment Configuration
+
+Create a `.env` file in the project root to prefill connection details when the page loads:
+
+```
+SERVER_URL=http://localhost:1234
+AUTH_TOKEN=
+```
+
+`SERVER_URL` is required and should point to your LM Studio server. `AUTH_TOKEN` is optional and may be left blank if the server does not require authentication.

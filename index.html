@@ -418,12 +418,14 @@
   </div>
   <!-- Custom context menu for deleting chats -->
   <div id="context-menu">Delete Chat</div>
-  
+
+  <script type="module" src="config.js"></script>
   <script>
     // Global variables
       const chatContainer = document.getElementById('chat-container');
       const userInput = document.getElementById('user-input');
       const serverUrlInput = document.getElementById('server-url');
+      serverUrlInput.value = window.CONFIG?.SERVER_URL || '';
       const authTokenInput = document.getElementById('auth-token');
       const connectButton = document.getElementById('connect-button');
       const connectionStatus = document.getElementById('connection-status');
@@ -442,7 +444,7 @@
       let currentModel = '';
       let pendingImage = null;
       let authToken = window.CONFIG?.AUTH_TOKEN || '';
-      if (authToken && authTokenInput) {
+      if (authTokenInput) {
         authTokenInput.value = authToken;
       }
     
