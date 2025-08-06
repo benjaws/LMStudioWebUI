@@ -385,7 +385,7 @@
 <body>
     <div id="app">
       <div id="server-url-container">
-        <input type="text" id="server-url" placeholder="Enter LM Studio server address" />
+        <input type="text" id="server-url" placeholder="Enter LM Studio server address (domain or IP)" />
         <input type="text" id="auth-token" placeholder="API Token" />
         <select id="model-select" disabled>
           <option value="">Select a model</option>
@@ -600,7 +600,7 @@
     
     // Ejects the currently loaded model.
       async function ejectCurrentModel(oldModel) {
-        const serverUrl = serverUrlInput.value.trim();
+        const serverUrl = normalizeServerUrl(serverUrlInput.value.trim());
         try {
           const headers = { 'Content-Type': 'application/json' };
           if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -648,17 +648,25 @@
       currentModel = newModel;
       modelSelect.disabled = false;
     });
-    
+
+    function normalizeServerUrl(url) {
+      if (!/^https?:\/\//i.test(url)) {
+        return `http://${url}`;
+      }
+      return url;
+    }
+
       // Connect to server and populate model dropdown.
       async function connectToServer() {
-        const serverUrl = serverUrlInput.value.trim();
+        const rawUrl = serverUrlInput.value.trim();
         if (authTokenInput) {
           authToken = authTokenInput.value.trim();
         }
-        if (!serverUrl) {
+        if (!rawUrl) {
           updateConnectionStatus('Please enter a valid server address', false);
           return;
         }
+        const serverUrl = normalizeServerUrl(rawUrl);
         try {
           updateConnectionStatus('Connecting...', false);
           const headers = { 'Content-Type': 'application/json' };
@@ -750,7 +758,7 @@
       userInput.disabled = true;
       sendButton.disabled = true;
     
-      const serverUrl = serverUrlInput.value.trim();
+      const serverUrl = normalizeServerUrl(serverUrlInput.value.trim());
       const startTime = performance.now();
       let accumulatedText = '';
     
