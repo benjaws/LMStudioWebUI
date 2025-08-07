@@ -478,7 +478,15 @@
       if (authTokenInput) {
         authTokenInput.value = authToken;
       }
-    
+
+      function applyAuthHeader(headers) {
+        if (authToken) {
+          headers['Authorization'] = authToken.includes(':')
+            ? `Basic ${btoa(authToken)}`
+            : `Bearer ${authToken}`;
+        }
+      }
+
     // Chat management: each chat has an id, name, and messages array.
     let chats = [];
     let currentChat = null;
@@ -701,7 +709,7 @@
         const serverUrl = normalizeServerUrl(serverUrlInput.value.trim());
         try {
           const headers = { 'Content-Type': 'application/json' };
-          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          applyAuthHeader(headers);
           await fetch(`${serverUrl}/v1/model/eject`, {
             method: 'POST',
             headers,
@@ -768,7 +776,7 @@
         try {
           updateConnectionStatus('Connecting...', false);
           const headers = { 'Content-Type': 'application/json' };
-          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          applyAuthHeader(headers);
           const response = await fetch(`${serverUrl}/v1/models`, {
             method: 'GET',
             headers
@@ -862,7 +870,7 @@
     
         try {
           const headers = { 'Content-Type': 'application/json' };
-          if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+          applyAuthHeader(headers);
           const response = await fetch(`${serverUrl}/v1/chat/completions`, {
             method: 'POST',
             headers,
