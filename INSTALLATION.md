@@ -9,7 +9,7 @@ Follow these steps to set up the LM Studio WebUI on your machine.
 ## Setup
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YorkieDev/LMStudioWebUI.git
+   git clone https://github.com/benjaws/LMStudioWebUI.git
    cd LMStudioWebUI
    ```
 2. **Install dependencies**
