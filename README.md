@@ -108,10 +108,10 @@ Create a `.env` file in the project root to prefill connection details when the 
 
 ```
 SERVER_URL=http://localhost:1234
-AUTH_TOKEN=
+AUTH_TOKEN=alice:secret
 ```
 
-`SERVER_URL` is required and should point to your LM Studio server. `AUTH_TOKEN` is optional and may be left blank if the server does not require authentication.
+`SERVER_URL` is required and should point to your LM Studio server. `AUTH_TOKEN` may either be a bearer token or a `username:password` pair for servers using HTTP Basic authentication. Leave it blank if the server does not require authentication.
 
 ## Long-term Chat Memory
 
