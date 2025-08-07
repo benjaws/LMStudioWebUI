@@ -7,8 +7,10 @@ const db = new sqlite3.Database('chats.db');
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY,
-    name TEXT
+    name TEXT,
+    folder TEXT DEFAULT 'Default'
   )`);
+  db.run(`ALTER TABLE conversations ADD COLUMN folder TEXT DEFAULT 'Default'`, err => {});
   db.run(`CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER,
@@ -32,7 +34,7 @@ app.get('/api/chats', (req, res) => {
     const tasks = conversations.map(c => new Promise((resolve, reject) => {
       db.all(`SELECT sender, content, metrics, is_image as isImage, image_data as imageData FROM messages WHERE conversation_id=? ORDER BY id`, [c.id], (err2, msgs) => {
         if (err2) reject(err2);
-        else resolve({ id: c.id, name: c.name, messages: msgs });
+        else resolve({ id: c.id, name: c.name, folder: c.folder, messages: msgs });
       });
     }));
     Promise.all(tasks)
@@ -46,7 +48,7 @@ app.post('/api/chats', (req, res) => {
   const chat = req.body;
   if (!chat || !chat.id) return res.status(400).json({ error: 'Invalid chat' });
   db.serialize(() => {
-    db.run(`INSERT OR REPLACE INTO conversations(id, name) VALUES(?, ?)`, [chat.id, chat.name || 'Conversation'], (err) => {
+    db.run(`INSERT OR REPLACE INTO conversations(id, name, folder) VALUES(?, ?, ?)`, [chat.id, chat.name || 'Conversation', chat.folder || 'Default'], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       db.run(`DELETE FROM messages WHERE conversation_id=?`, [chat.id], (err2) => {
         if (err2) return res.status(500).json({ error: err2.message });
