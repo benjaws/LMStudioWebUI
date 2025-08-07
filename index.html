@@ -427,6 +427,7 @@
   <script type="module" src="config.js"></script>
   <script>
     window.CONFIG_READY.then(() => {
+      console.log('[DEBUG] CONFIG_READY resolved');
       // Global variables
       const chatContainer = document.getElementById('chat-container');
       const userInput = document.getElementById('user-input');
@@ -448,12 +449,11 @@
       let isConnected = false;
       let currentModel = '';
       let pendingImage = null;
-  const serverUrl = window.CONFIG?.SERVER_URL || '';
-  console.log('[DEBUG] window.CONFIG:', window.CONFIG);
-  serverUrlDisplay.textContent = serverUrl ? `Server: ${serverUrl}` : 'Server URL not set';
-      let authToken = window.CONFIG?.AUTH_TOKEN || '';
-
-      function applyAuthHeader(headers) {
+      const serverUrl = window.CONFIG?.SERVER_URL || '';
+      console.log('[DEBUG] window.CONFIG:', window.CONFIG);
+      console.log('[DEBUG] serverUrl:', serverUrl);
+      serverUrlDisplay.textContent = serverUrl ? `Server: ${serverUrl}` : 'Server URL not set';
+      let authToken = window.CONFIG?.AUTH_TOKEN || '';      function applyAuthHeader(headers) {
         if (authToken) {
           headers['Authorization'] = authToken.includes(':')
             ? `Basic ${btoa(authToken)}`
