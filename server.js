@@ -10,7 +10,9 @@ const path = require('path');
 
 // ... tout le code serveur ...
 
-// Endpoint pour exposer la config au front-end (après l'init de app)
+
+// ... tout le code serveur ...
+// Endpoint pour exposer la config au front-end (doit être après tous les app = express et routes principales)
 app.get('/config', (req, res) => {
   res.json({
     SERVER_URL: process.env.SERVER_URL || '',
