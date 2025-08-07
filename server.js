@@ -25,7 +25,8 @@ db.serialize(() => {
 
 const app = express();
 app.use(express.json({limit: '10mb'}));
-app.use(express.static(path.join(__dirname)));
+// Allow serving dotfiles so the frontend can fetch the .env configuration
+app.use(express.static(path.join(__dirname), { dotfiles: 'allow' }));
 
 // Return all chats with their messages
 app.get('/api/chats', (req, res) => {
