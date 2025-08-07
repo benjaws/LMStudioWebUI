@@ -451,6 +451,45 @@
     // Chat management: each chat has an id, name, and messages array.
     let chats = [];
     let currentChat = null;
+
+    async function saveChat(chat) {
+      try {
+        await fetch('/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chat)
+        });
+      } catch (err) {
+        console.error('Failed to save chat', err);
+      }
+    }
+
+    async function loadChatsFromServer() {
+      try {
+        const response = await fetch('/api/chats');
+        if (response.ok) {
+          const data = await response.json();
+          chats = data.map(c => ({
+            id: c.id,
+            name: c.name,
+            messages: c.messages.map(m => ({
+              content: m.content,
+              isUser: m.sender ? m.sender === 'user' : m.isUser,
+              metrics: m.metrics || null,
+              isImage: m.isImage || false,
+              imageData: m.imageData || null
+            }))
+          }));
+          currentChat = chats.length > 0 ? chats[0] : null;
+          if (!currentChat) createNewChat(); else loadChat(currentChat);
+          updateChatList();
+        }
+      } catch (err) {
+        console.error('Failed to load chats', err);
+        createNewChat();
+        updateChatList();
+      }
+    }
     
     // Helper: Attach copy code buttons to code blocks
     function attachCopyButtons(container) {
@@ -523,6 +562,7 @@
       
       if (store && currentChat) {
         currentChat.messages.push({ content, isUser, metrics, isImage: false });
+        saveChat(currentChat);
       }
     }
     
@@ -535,6 +575,7 @@
       lastMsg.isImage = true;
       lastMsg.imageData = dataURL;
       lastMsg.text = promptText;
+      saveChat(currentChat);
     }
     
     // Creates a new chat.
@@ -545,6 +586,7 @@
       currentChat = newChat;
       updateChatList();
       chatContainer.innerHTML = '';
+      saveChat(newChat);
     }
     
     // Renders the chat list in the sidebar.
@@ -598,6 +640,7 @@
         else loadChat(currentChat);
       }
       updateChatList();
+      fetch(`/api/chats/${chatId}`, { method: 'DELETE' }).catch(err => console.error('Failed to delete chat', err));
     }
     
     // Ejects the currently loaded model.
@@ -832,6 +875,7 @@
             currentChat.name = snippet ? `Conversation: ${snippet}...` : currentChat.name;
             updateChatList();
           }
+          saveChat(currentChat);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -880,7 +924,8 @@
     sendButton.addEventListener('click', sendMessage);
     newChatButton.addEventListener('click', () => { createNewChat(); });
     toggleSidebarButton.addEventListener('click', () => { chatSidebar.classList.toggle('collapsed'); });
-    
+
+    loadChatsFromServer();
     serverUrlInput.focus();
   </script>
 </body>

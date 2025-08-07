@@ -1,0 +1,18 @@
+{
+  "name": "lmstudiowebui",
+  "version": "1.0.0",
+  "description": "⚠️ This is an **unofficial** project and is **not affiliated with or endorsed by LM Studio**.",
+  "main": "config.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node -e \"console.log('No tests specified')\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.1.0",
+    "sqlite3": "^5.1.7"
+  }
+}
