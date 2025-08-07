@@ -419,9 +419,11 @@
   <!-- Custom context menu for deleting chats -->
   <div id="context-menu">Delete Chat</div>
 
+
   <script type="module" src="config.js"></script>
   <script>
-    // Global variables
+    window.CONFIG_READY.then(() => {
+      // Global variables
       const chatContainer = document.getElementById('chat-container');
       const userInput = document.getElementById('user-input');
       const serverUrlDisplay = document.getElementById('server-url-display');
