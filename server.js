@@ -1,12 +1,16 @@
 
 
+
 require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // ... après l'initialisation de app ...
-// Endpoint pour exposer la config au front-end
+
+// ... tout le code serveur ...
+
+// Endpoint pour exposer la config au front-end (après l'init de app)
 app.get('/config', (req, res) => {
   res.json({
     SERVER_URL: process.env.SERVER_URL || '',
