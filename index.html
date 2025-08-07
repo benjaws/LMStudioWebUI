@@ -44,27 +44,11 @@
       align-items: center;
       box-shadow: var(--shadow);
     }
-    #server-url {
+    #server-url-display {
       flex-grow: 1;
       padding: 0.5rem 0.75rem;
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
-      border: none;
-      border-radius: var(--border-radius);
-      background-color: var(--background-color);
-      color: var(--text-color);
-      font-size: 0.95rem;
-    }
-    #auth-token {
-      flex-grow: 1;
-      padding: 0.5rem 0.75rem;
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
-      border: none;
-      border-radius: var(--border-radius);
-      background-color: var(--background-color);
-      color: var(--text-color);
-      font-size: 0.95rem;
     }
     /* Model selection dropdown */
     #model-select {
@@ -76,17 +60,6 @@
       background-color: var(--background-color);
       color: var(--text-color);
     }
-    #connect-button {
-      padding: 0.55rem 1rem;
-      background-color: var(--button-color);
-      color: var(--text-color);
-      border: none;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-size: 0.95rem;
-      transition: background-color var(--transition-speed);
-    }
-    #connect-button:hover { background-color: var(--accent-color); }
     #connection-status {
       width: 100%;
       text-align: center;
@@ -346,7 +319,7 @@
     @media (max-width: 480px) {
       .message { max-width: 90%; }
       #server-url-container { flex-direction: column; align-items: stretch; }
-      #server-url, #connect-button, #model-select { width: 100%; margin-right: 0; margin-bottom: 0.5rem; }
+      #server-url-display, #model-select { width: 100%; margin-right: 0; margin-bottom: 0.5rem; }
       #chat-sidebar { display: none; }
     }
     @keyframes fadeIn {
@@ -410,12 +383,10 @@
 <body>
     <div id="app">
       <div id="server-url-container">
-        <input type="text" id="server-url" placeholder="Enter LM Studio server address (domain or IP)" />
-        <input type="text" id="auth-token" placeholder="API Token" />
+        <span id="server-url-display"></span>
         <select id="model-select" disabled>
           <option value="">Select a model</option>
         </select>
-        <button id="connect-button"><i class="fas fa-plug"></i> Connect</button>
       </div>
     <div id="connection-status">Disconnected</div>
     <div id="main-content">
@@ -453,10 +424,7 @@
     // Global variables
       const chatContainer = document.getElementById('chat-container');
       const userInput = document.getElementById('user-input');
-      const serverUrlInput = document.getElementById('server-url');
-      serverUrlInput.value = window.CONFIG?.SERVER_URL || '';
-      const authTokenInput = document.getElementById('auth-token');
-      const connectButton = document.getElementById('connect-button');
+      const serverUrlDisplay = document.getElementById('server-url-display');
       const connectionStatus = document.getElementById('connection-status');
       const sendButton = document.getElementById('send-button');
       const newChatButton = document.getElementById('new-chat-button');
@@ -474,10 +442,9 @@
       let isConnected = false;
       let currentModel = '';
       let pendingImage = null;
+      const serverUrl = window.CONFIG?.SERVER_URL || '';
+      serverUrlDisplay.textContent = serverUrl ? `Server: ${serverUrl}` : 'Server URL not set';
       let authToken = window.CONFIG?.AUTH_TOKEN || '';
-      if (authTokenInput) {
-        authTokenInput.value = authToken;
-      }
 
       function applyAuthHeader(headers) {
         if (authToken) {
@@ -706,11 +673,11 @@
     
     // Ejects the currently loaded model.
       async function ejectCurrentModel(oldModel) {
-        const serverUrl = normalizeServerUrl(serverUrlInput.value.trim());
+        const serverUrlNormalized = normalizeServerUrl(serverUrl);
         try {
           const headers = { 'Content-Type': 'application/json' };
           applyAuthHeader(headers);
-          await fetch(`${serverUrl}/v1/model/eject`, {
+          await fetch(`${serverUrlNormalized}/v1/model/eject`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ model: oldModel })
@@ -764,20 +731,16 @@
 
       // Connect to server and populate model dropdown.
       async function connectToServer() {
-        const rawUrl = serverUrlInput.value.trim();
-        if (authTokenInput) {
-          authToken = authTokenInput.value.trim();
-        }
-        if (!rawUrl) {
-          updateConnectionStatus('Please enter a valid server address', false);
+        if (!serverUrl) {
+          updateConnectionStatus('No server URL configured', false);
           return;
         }
-        const serverUrl = normalizeServerUrl(rawUrl);
+        const normalizedUrl = normalizeServerUrl(serverUrl);
         try {
           updateConnectionStatus('Connecting...', false);
           const headers = { 'Content-Type': 'application/json' };
           applyAuthHeader(headers);
-          const response = await fetch(`${serverUrl}/v1/models`, {
+          const response = await fetch(`${normalizedUrl}/v1/models`, {
             method: 'GET',
             headers
           });
@@ -813,9 +776,6 @@
     function updateConnectionStatus(message, connected) {
       connectionStatus.textContent = message;
       connectionStatus.style.color = connected ? 'var(--accent-color)' : '#f44336';
-      connectButton.textContent = connected ? 'Disconnect' : 'Connect';
-      serverUrlInput.disabled = connected;
-      if (authTokenInput) authTokenInput.disabled = connected;
       userInput.disabled = !connected;
       sendButton.disabled = !connected;
     }
@@ -864,14 +824,14 @@
       userInput.disabled = true;
       sendButton.disabled = true;
     
-      const serverUrl = normalizeServerUrl(serverUrlInput.value.trim());
+      const serverUrlNormalized = normalizeServerUrl(serverUrl);
       const startTime = performance.now();
       let accumulatedText = '';
     
         try {
           const headers = { 'Content-Type': 'application/json' };
           applyAuthHeader(headers);
-          const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+          const response = await fetch(`${serverUrlNormalized}/v1/chat/completions`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -964,23 +924,7 @@
       reader.readAsDataURL(file);
       imageUpload.value = "";
     });
-    
-      connectButton.addEventListener('click', () => {
-        if (isConnected) {
-          isConnected = false;
-          updateConnectionStatus('Disconnected', false);
-          userInput.disabled = true;
-          sendButton.disabled = true;
-          addMessage('Disconnected from LM Studio server.', false);
-          currentModel = '';
-          modelSelect.disabled = true;
-          authToken = '';
-          if (authTokenInput) authTokenInput.value = '';
-        } else {
-          connectToServer();
-        }
-      });
-    
+
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     sendButton.addEventListener('click', sendMessage);
     newFolderButton.addEventListener('click', () => {
@@ -1005,7 +949,12 @@
     toggleSidebarButton.addEventListener('click', () => { chatSidebar.classList.toggle('collapsed'); });
 
     loadChatsFromServer();
-    serverUrlInput.focus();
+    if (serverUrl) {
+      connectToServer();
+    } else {
+      updateConnectionStatus('No server URL configured', false);
+    }
+    userInput.focus();
   </script>
 </body>
 </html>
