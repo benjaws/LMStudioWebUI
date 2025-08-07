@@ -8,18 +8,6 @@ const path = require('path');
 
 // ... après l'initialisation de app ...
 
-// ... tout le code serveur ...
-
-
-// ... tout le code serveur ...
-// Endpoint pour exposer la config au front-end (doit être après tous les app = express et routes principales)
-app.get('/config', (req, res) => {
-  res.json({
-    SERVER_URL: process.env.SERVER_URL || '',
-    AUTH_TOKEN: process.env.AUTH_TOKEN || ''
-  });
-});
-
 const db = new sqlite3.Database('chats.db');
 
 db.serialize(() => {
@@ -93,6 +81,14 @@ app.delete('/api/chats/:id', (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ status: 'ok' });
     });
+  });
+});
+
+// Endpoint pour exposer la config au front-end
+app.get('/config', (req, res) => {
+  res.json({
+    SERVER_URL: process.env.SERVER_URL || '',
+    AUTH_TOKEN: process.env.AUTH_TOKEN || ''
   });
 });
 
