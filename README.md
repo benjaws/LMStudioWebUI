@@ -69,8 +69,8 @@ There are several ways to get the `lmstudiowebui.html` file on your mobile devic
    - On mobile: Use a file manager app to locate the downloaded `lmstudiowebui.html` file and open it with your web browser.
 
 3. **Connect to LM Studio Server**:
-   - In the chat interface, enter the LM Studio server address in the input field at the top. 
-   - Click the "Connect" button.
+   - Create a `.env` file alongside the interface with `SERVER_URL` and optional `AUTH_TOKEN`.
+   - When the page loads it will automatically use these values, display the server URL, and show whether the connection succeeded.
 
 4. **Start Chatting**:
    - Once connected, you can start typing messages in the input field at the bottom of the screen.
@@ -104,7 +104,7 @@ This is a personal project. While the code is public for anyone to use and learn
 
 ## Environment Configuration
 
-Create a `.env` file in the project root to prefill connection details when the page loads:
+Create a `.env` file in the project root to automatically configure the connection when the page loads:
 
 ```
 SERVER_URL=http://localhost:1234
