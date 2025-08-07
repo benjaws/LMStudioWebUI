@@ -16,6 +16,7 @@ This is a simple, browser-based chat interface for interacting with your LM Stud
 - Vision Model Support **NEW**
 - Choose your model **NEW**
 - Delete Chats **NEW**
+- Long-term chat memory stored in SQLite **NEW**
 
 
 ## Screenshots 📸
@@ -111,3 +112,13 @@ AUTH_TOKEN=
 ```
 
 `SERVER_URL` is required and should point to your LM Studio server. `AUTH_TOKEN` is optional and may be left blank if the server does not require authentication.
+
+## Long-term Chat Memory
+
+Run the optional Node.js server to store chats in a local SQLite database.
+
+1. Install dependencies with `npm install`.
+2. Start the server using `npm start`.
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+Chats are persisted in the `chats.db` file and loaded automatically when the page opens.
