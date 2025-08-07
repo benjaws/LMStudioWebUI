@@ -9,7 +9,6 @@ window.CONFIG_READY = (async () => {
     console.error('Failed to load /config', err);
   }
   window.CONFIG = {
-    SERVER_URL: config.SERVER_URL || '',
-    AUTH_TOKEN: config.AUTH_TOKEN || ''
+    SERVER_URL: config.SERVER_URL || ''
   };
 })();

@@ -84,11 +84,10 @@ app.delete('/api/chats/:id', (req, res) => {
   });
 });
 
-// Endpoint pour exposer la config au front-end
+// Endpoint pour exposer la config au front-end (sans exposer AUTH_TOKEN)
 app.get('/config', (req, res) => {
   res.json({
-    SERVER_URL: process.env.SERVER_URL || '',
-    AUTH_TOKEN: process.env.AUTH_TOKEN || ''
+    SERVER_URL: process.env.SERVER_URL || ''
   });
 });
 
