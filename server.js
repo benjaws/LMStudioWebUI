@@ -1,6 +1,15 @@
+
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+// Endpoint pour exposer la config au front-end
+app.get('/config', (req, res) => {
+  res.json({
+    SERVER_URL: process.env.SERVER_URL || '',
+    AUTH_TOKEN: process.env.AUTH_TOKEN || ''
+  });
+});
 
 const db = new sqlite3.Database('chats.db');
 

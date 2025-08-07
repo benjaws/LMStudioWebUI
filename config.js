@@ -1,17 +1,15 @@
 
-import { parse } from 'https://cdn.jsdelivr.net/npm/dotenv@16.4.5/+esm';
 
 window.CONFIG_READY = (async () => {
-  let env = {};
+  let config = {};
   try {
-    const response = await fetch('.env?_=' + Date.now()); // anti-cache
-    const text = await response.text();
-    env = parse(text);
+    const response = await fetch('/config?_=' + Date.now());
+    config = await response.json();
   } catch (err) {
-    console.error('Failed to load .env', err);
+    console.error('Failed to load /config', err);
   }
   window.CONFIG = {
-    SERVER_URL: env.SERVER_URL || '',
-    AUTH_TOKEN: env.AUTH_TOKEN || ''
+    SERVER_URL: config.SERVER_URL || '',
+    AUTH_TOKEN: config.AUTH_TOKEN || ''
   };
 })();
