@@ -444,8 +444,9 @@
       let isConnected = false;
       let currentModel = '';
       let pendingImage = null;
-      const serverUrl = window.CONFIG?.SERVER_URL || '';
-      serverUrlDisplay.textContent = serverUrl ? `Server: ${serverUrl}` : 'Server URL not set';
+  const serverUrl = window.CONFIG?.SERVER_URL || '';
+  console.log('[DEBUG] window.CONFIG:', window.CONFIG);
+  serverUrlDisplay.textContent = serverUrl ? `Server: ${serverUrl}` : 'Server URL not set';
       let authToken = window.CONFIG?.AUTH_TOKEN || '';
 
       function applyAuthHeader(headers) {
