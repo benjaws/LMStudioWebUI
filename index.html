@@ -145,6 +145,31 @@
       font-size: 1.1rem;
       font-weight: 600;
     }
+    #folder-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    #folder-select {
+      flex-grow: 1;
+      padding: 0.25rem 0.5rem;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-size: 0.85rem;
+    }
+    #new-folder-button {
+      padding: 0.25rem 0.5rem;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--button-color);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+    #new-folder-button:hover { background-color: var(--accent-color); }
     #new-chat-button {
       width: 100%;
       padding: 0.5rem;
@@ -399,6 +424,10 @@
         <button id="toggle-sidebar"><i class="fas fa-bars"></i></button>
         <div class="sidebar-content">
           <div id="chat-sidebar-header"><span>Chats</span></div>
+          <div id="folder-controls">
+            <select id="folder-select"></select>
+            <button id="new-folder-button"><i class="fas fa-folder-plus"></i></button>
+          </div>
           <button id="new-chat-button"><i class="fas fa-plus"></i> New Chat</button>
           <ul id="chat-list"></ul>
         </div>
@@ -434,6 +463,8 @@
       const toggleSidebarButton = document.getElementById('toggle-sidebar');
       const chatSidebar = document.getElementById('chat-sidebar');
       const chatList = document.getElementById('chat-list');
+      const folderSelect = document.getElementById('folder-select');
+      const newFolderButton = document.getElementById('new-folder-button');
       const contextMenu = document.getElementById('context-menu');
       const modelSelect = document.getElementById('model-select');
       const uploadButton = document.getElementById('upload-button');
@@ -451,6 +482,9 @@
     // Chat management: each chat has an id, name, and messages array.
     let chats = [];
     let currentChat = null;
+    let folders = ['Default'];
+    let currentFolder = 'Default';
+    updateFolderSelect();
 
     async function saveChat(chat) {
       try {
@@ -472,6 +506,7 @@
           chats = data.map(c => ({
             id: c.id,
             name: c.name,
+            folder: c.folder || 'Default',
             messages: c.messages.map(m => ({
               content: m.content,
               isUser: m.sender ? m.sender === 'user' : m.isUser,
@@ -480,7 +515,11 @@
               imageData: m.imageData || null
             }))
           }));
-          currentChat = chats.length > 0 ? chats[0] : null;
+          folders = Array.from(new Set(['Default', ...chats.map(c => c.folder)]));
+          if (!folders.includes(currentFolder)) currentFolder = folders[0];
+          updateFolderSelect();
+          const folderChats = chats.filter(c => (c.folder || 'Default') === currentFolder);
+          currentChat = folderChats.length > 0 ? folderChats[0] : null;
           if (!currentChat) createNewChat(); else loadChat(currentChat);
           updateChatList();
         }
@@ -490,7 +529,18 @@
         updateChatList();
       }
     }
-    
+
+    function updateFolderSelect() {
+      folderSelect.innerHTML = '';
+      folders.forEach(f => {
+        const option = document.createElement('option');
+        option.value = f;
+        option.textContent = f;
+        folderSelect.appendChild(option);
+      });
+      folderSelect.value = currentFolder;
+    }
+
     // Helper: Attach copy code buttons to code blocks
     function attachCopyButtons(container) {
       container.querySelectorAll('pre').forEach(pre => {
@@ -581,18 +631,18 @@
     // Creates a new chat.
     function createNewChat() {
       const chatId = Date.now();
-      const newChat = { id: chatId, name: `Conversation ${chats.length + 1}`, messages: [] };
+      const newChat = { id: chatId, name: `Conversation ${chats.length + 1}`, folder: currentFolder, messages: [] };
       chats.push(newChat);
       currentChat = newChat;
       updateChatList();
       chatContainer.innerHTML = '';
       saveChat(newChat);
     }
-    
+
     // Renders the chat list in the sidebar.
     function updateChatList() {
       chatList.innerHTML = '';
-      chats.forEach(chat => {
+      chats.filter(chat => (chat.folder || 'Default') === currentFolder).forEach(chat => {
         const li = document.createElement('li');
         li.textContent = chat.name;
         li.dataset.chatId = chat.id;
@@ -634,10 +684,13 @@
     document.addEventListener('click', () => { if (contextMenu.style.display === "block") hideContextMenu(); });
     function deleteChat(chatId) {
       chats = chats.filter(c => c.id != chatId);
+      folders = Array.from(new Set(['Default', ...chats.map(c => c.folder || 'Default')]));
+      if (!folders.includes(currentFolder)) currentFolder = folders[0];
+      updateFolderSelect();
+      const folderChats = chats.filter(c => (c.folder || 'Default') === currentFolder);
       if (currentChat && currentChat.id == chatId) {
-        currentChat = chats.length > 0 ? chats[0] : null;
-        if (!currentChat) createNewChat();
-        else loadChat(currentChat);
+        currentChat = folderChats.length > 0 ? folderChats[0] : null;
+        if (currentChat) loadChat(currentChat); else chatContainer.innerHTML = '';
       }
       updateChatList();
       fetch(`/api/chats/${chatId}`, { method: 'DELETE' }).catch(err => console.error('Failed to delete chat', err));
@@ -922,6 +975,24 @@
     
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     sendButton.addEventListener('click', sendMessage);
+    newFolderButton.addEventListener('click', () => {
+      const name = prompt('Folder name');
+      if (name && !folders.includes(name)) {
+        folders.push(name);
+        currentFolder = name;
+        updateFolderSelect();
+        updateChatList();
+      }
+    });
+
+    folderSelect.addEventListener('change', () => {
+      currentFolder = folderSelect.value;
+      const folderChats = chats.filter(c => (c.folder || 'Default') === currentFolder);
+      currentChat = folderChats.length > 0 ? folderChats[0] : null;
+      if (currentChat) loadChat(currentChat); else chatContainer.innerHTML = '';
+      updateChatList();
+    });
+
     newChatButton.addEventListener('click', () => { createNewChat(); });
     toggleSidebarButton.addEventListener('click', () => { chatSidebar.classList.toggle('collapsed'); });
 
